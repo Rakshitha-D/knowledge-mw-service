@@ -4,7 +4,8 @@ COPY .git /opt/content/.git
 COPY src /opt/content/
 WORKDIR /opt/content/
 RUN git config --global --add safe.directory /opt/content
-RUN git submodule update --init --recursive
+RUN git submodule init && \
+    git submodule update
 RUN npm install --unsafe-perm --production
 
 FROM node:22.15-slim
