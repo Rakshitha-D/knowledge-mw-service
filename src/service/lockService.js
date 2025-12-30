@@ -203,7 +203,7 @@ function createLock(req, response) {
             expiresAt: newDateObj
           })
 
-          lockObject.save({ ttl: defaultLockExpiryTime }, function (err, resp) {
+          lockObject.save(function (err, resp) {
             if (err) {
               rspObj.errCode = contentMessage.CREATE_LOCK.FAILED_CODE
               rspObj.errMsg = contentMessage.CREATE_LOCK.FAILED_MESSAGE
@@ -425,7 +425,7 @@ function refreshLock(req, response) {
             }, req)
             return response.status(403).send(respUtil.errorResponse(rspObj))
           }
-          var options = { ttl: defaultLockExpiryTime, if_exists: true }
+          var options = { if_exists: true }
           dbModel.instance.lock.update(
             { resourceId: data.request.resourceId, resourceType: data.request.resourceType },
             {
