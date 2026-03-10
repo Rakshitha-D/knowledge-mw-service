@@ -33,7 +33,7 @@ _.forEach(keyspaceConfig, config => {
     models.loadSchema(schema.table_name, schema)
     models.instance[schema.table_name].syncDB((err, result) => {
       if (err) {
-        console.log('sync failed for keyspace and table', schema.table_name)
+        console.log('sync failed for keyspace and table', config.name, schema.table_name, err)
       }
     })
     connection[config.name] = models
