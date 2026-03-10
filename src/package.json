@@ -87,6 +87,9 @@
     "xmlhttprequest-ssl": "1.6.2",
     "minimist": "^1.2.6",
     "underscore": "^1.13.6",
+    "request": {
+      "form-data": "2.5.4"
+    },
     "grunt-karma": {
       "lodash": "^4.17.21"
     }
