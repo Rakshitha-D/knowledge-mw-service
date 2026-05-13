@@ -22,6 +22,7 @@ var contentMessage = messageUtils.CONTENT
 var responseCode = messageUtils.RESPONSE_CODE
 var defaultLockExpiryTime = parseInt(configUtil.getConfig('LOCK_EXPIRY_TIME'))
 var contentProvider = require('sb_content_provider_util')
+var contentService = require('./contentService')
 
 function createLock(req, response) {
   var lockId = dbModel.uuid()
@@ -776,21 +777,14 @@ function checkResourceTypeValidation(req, CBW) {
   logger.debug({ msg: 'lockService.checkResourceTypeValidation() called' }, req)
   switch (lodash.lowerCase(req.body.request.resourceType)) {
     case 'content':
-      var httpOptions = {
-        url: configUtil.getConfig('CONTENT_SERVICE_LOCAL_BASE_URL') + '/v1/content/getContentLockValidation',
-        headers: req.headers,
-        method: 'POST',
-        body: req.body,
-        json: true
-      }
-      request(httpOptions, function (err, httpResponse, body) {
+      contentService.validateContentLockCore(req, function (err, rspObj) {
         if (err) {
-          logger.error({ msg: 'error in lock service in checkResourceTypeValidation', additionalInfo: { httpOpt: lodash.omit(httpOptions, 'headers') }, err })
+          logger.error({ msg: 'error in lock service in checkResourceTypeValidation', err }, req)
           CBW(false, err)
-        } else if (lodash.get(body, 'result.message')) {
-          CBW(body.result.validation, body.result)
+        } else if (lodash.get(rspObj, 'result.message')) {
+          CBW(rspObj.result.validation, rspObj.result)
         } else {
-          CBW(false, body)
+          CBW(false, rspObj)
         }
       })
       break

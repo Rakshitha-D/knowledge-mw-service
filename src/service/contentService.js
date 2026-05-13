@@ -1905,11 +1905,11 @@ function searchPluginsAPI (req, response, objectType) {
   ])
 }
 
-function validateContentLock (req, response) {
+function validateContentLockCore (req, callback) {
   var rspObj = req.rspObj
   var userId = req.get('x-authenticated-userid')
   var isRootOrgAdmin = lodash.has(req.body.request, "isRootOrgAdmin") ? req.body.request.isRootOrgAdmin : false
-  logger.debug({ msg: 'contentService.validateContentLock() called', additionalInfo: { rspObj } }, req)
+  logger.debug({ msg: 'contentService.validateContentLockCore() called', additionalInfo: { rspObj } }, req)
   var qs = {
     mode: 'edit'
   }
@@ -1918,19 +1918,19 @@ function validateContentLock (req, response) {
       rspObj.result.validation = false
       rspObj.result.message = 'Unable to fetch content details'
       logger.error({ msg: 'Getting content details failed', err: { err, errMsg: rspObj.result.message } }, req)
-      return response.status(500).send(respUtil.errorResponse(rspObj))
+      return callback(err, rspObj, 500)
     } else if (res && res.responseCode !== responseCode.SUCCESS) {
       rspObj.result.validation = false
       rspObj.result.message = res.params.errmsg
       logger.error({ msg: 'Getting content details failed', err: { errMsg: rspObj.result.message }, res }, req)
-      return response.status(500).send(respUtil.errorResponse(rspObj))
+      return callback(null, rspObj, 500)
     } else {
       logger.debug({ msg: 'Getting content details success', res }, req)
       if (res.result.content.status !== 'Draft' && req.body.request.apiName !== 'retireLock' && !isRootOrgAdmin) {
         rspObj.result.validation = false
         rspObj.result.message = 'The operation cannot be completed as content is not in draft state'
         logger.warn({ msg: 'The operation cannot be completed as content is not in draft state' }, req)
-        return response.status(200).send(respUtil.successResponse(rspObj))
+        return callback(null, rspObj, 200)
       } else if (res.result.content.createdBy !== userId &&
         !lodash.includes(res.result.content.collaborators, userId)) {
         rspObj.result.validation = false
@@ -1940,15 +1940,24 @@ function validateContentLock (req, response) {
           additionalInfo: { userId, createdBy: res.result.content.createdBy },
           err: { errMsg: rspObj.result.message }
         }, req)
-        return response.status(200).send(respUtil.successResponse(rspObj))
+        return callback(null, rspObj, 200)
       } else {
         rspObj.result.validation = true
         rspObj.result.message = 'Content successfully validated'
         rspObj.result.contentdata = res.result.content
         logger.debug({ msg: 'Content successfully validated' }, req)
-        return response.status(200).send(respUtil.successResponse(rspObj))
+        return callback(null, rspObj, 200)
       }
     }
+  })
+}
+
+function validateContentLock (req, response) {
+  validateContentLockCore(req, function (err, rspObj, statusCode) {
+    if (statusCode === 500) {
+      return response.status(500).send(respUtil.errorResponse(rspObj))
+    }
+    return response.status(statusCode).send(respUtil.successResponse(rspObj))
   })
 }
 
@@ -1973,3 +1982,4 @@ module.exports.revokeBadgeAPI = revokeBadge
 module.exports.copyContentAPI = copyContentAPI
 module.exports.searchPluginsAPI = searchPluginsAPI
 module.exports.validateContentLock = validateContentLock
+module.exports.validateContentLockCore = validateContentLockCore
